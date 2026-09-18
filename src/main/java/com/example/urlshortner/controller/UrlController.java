@@ -1,0 +1,33 @@
+package com.example.urlshortner.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.urlshortner.dto.UrlRequestDTO;
+import com.example.urlshortner.dto.UrlResponseDTO;
+import com.example.urlshortner.service.UrlService;
+
+@RestController 
+@RequestMapping ("/api/url")
+public class UrlController {
+    private final UrlService urlService;
+
+    //constructor injection
+    public UrlController(UrlService urlService) {
+        this.urlService = urlService;
+    }
+
+    @PostMapping("/shorten")
+    public ResponseEntity<UrlResponseDTO> createShortUrl(@RequestBody UrlRequestDTO request) {
+
+        UrlResponseDTO response = urlService.createShortUrl(request);
+        
+
+        return ResponseEntity.ok(response);
+    }
+
+}
+
