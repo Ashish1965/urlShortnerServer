@@ -1,5 +1,6 @@
 package com.example.urlshortner.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,6 +13,11 @@ public class Url {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private String originalUrl;
+
+    @Column (unique = true,nullable = false)
     private String shortCode;
+    private Long clickCount = 0L;
 }
