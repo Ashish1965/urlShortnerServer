@@ -7,7 +7,8 @@ import org.springframework.stereotype.Service;
 import com.example.urlshortner.util.ShortCodeGenerator;
 import com.example.urlshortner.repository.UrlRepository;
 import com.example.urlshortner.entity.Url;
-
+import java.util.Optional;
+import com.example.urlshortner.dto.UrlInfoDTO;
 
 @Service
 public class UrlServiceImpl implements UrlService {
@@ -22,7 +23,15 @@ public class UrlServiceImpl implements UrlService {
     @Override
     public UrlResponseDTO createShortUrl(UrlRequestDTO request) {
         // Implement the logic to create a short URL here
-        String shortCode = ShortCodeGenerator.generateCode();
+
+        // Optional<Url> existing = urlRepository.findByOriginalUrl(request.url());
+        // if (existing.isPresent()) {
+        //     return new UrlResponseDTO(
+        //             request.url(),
+        //             baseUrl + "/" + existing.get().getShortCode());
+        // }
+
+        String shortCode = generateUniqueCode();
 
         Url url = new Url();
         url.setOriginalUrl(request.url());
@@ -30,7 +39,32 @@ public class UrlServiceImpl implements UrlService {
         urlRepository.save(url);
         return new UrlResponseDTO(
                 request.url(),
-                baseUrl + "/" + shortCode
-        );
+                baseUrl + "/" + shortCode);
+    }
+
+    @Override
+    public String getOriginalUrl(String shortCode) {
+        Url url = urlRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> new RuntimeException("Short URL not found"));
+
+        url.setClickCount(url.getClickCount() + 1);
+        urlRepository.save(url);
+        return url.getOriginalUrl();
+    }
+
+    @Override
+    public UrlInfoDTO getUrlInfo(String shortCode) {
+        Url url = urlRepository.findByShortCode(shortCode)
+                .orElseThrow(() -> new RuntimeException("Short URL not found"));
+        return new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount());
+    }
+
+    private String generateUniqueCode() {
+        String code;
+        do {
+            code = ShortCodeGenerator.generateCode();
+        } while (urlRepository.findByShortCode(code).isPresent());
+
+        return code;
     }
 }
