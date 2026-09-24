@@ -7,13 +7,13 @@ import org.springframework.stereotype.Service;
 import com.example.urlshortner.util.ShortCodeGenerator;
 import com.example.urlshortner.repository.UrlRepository;
 import com.example.urlshortner.entity.Url;
-import java.util.Optional;
+
 import com.example.urlshortner.dto.UrlInfoDTO;
 
 @Service
 public class UrlServiceImpl implements UrlService {
-    @Value("${app.base-url}")
-    private String baseUrl;
+    @Value("${spring.shortener.short-url}")
+    private String shortUrl;
     private final UrlRepository urlRepository;
 
     public UrlServiceImpl(UrlRepository urlRepository) {
@@ -39,7 +39,7 @@ public class UrlServiceImpl implements UrlService {
         urlRepository.save(url);
         return new UrlResponseDTO(
                 request.url(),
-                baseUrl + "/" + shortCode);
+                shortUrl + "/" + shortCode);
     }
 
     @Override
