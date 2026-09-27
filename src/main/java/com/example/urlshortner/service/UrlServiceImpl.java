@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.example.urlshortner.util.ShortCodeGenerator;
 import com.example.urlshortner.repository.UrlRepository;
 import com.example.urlshortner.entity.Url;
-import java.util.Optional;
+
 import com.example.urlshortner.dto.UrlInfoDTO;
 import java.util.List;
 import java.util.stream.Collectors;
