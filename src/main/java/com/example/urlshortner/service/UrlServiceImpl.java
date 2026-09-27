@@ -4,16 +4,22 @@ import org.springframework.beans.factory.annotation.Value;
 import com.example.urlshortner.dto.UrlRequestDTO;
 import com.example.urlshortner.dto.UrlResponseDTO;
 import org.springframework.stereotype.Service;
+
 import com.example.urlshortner.util.ShortCodeGenerator;
 import com.example.urlshortner.repository.UrlRepository;
 import com.example.urlshortner.entity.Url;
 import java.util.Optional;
 import com.example.urlshortner.dto.UrlInfoDTO;
+import java.util.List;
+import java.util.stream.Collectors;
+import com.example.urlshortner.exception.ResourceNotFoundException;
+import com.example.urlshortner.util.UrlValidator;
+import com.example.urlshortner.exception.NotValidUrlException;
 
 @Service
 public class UrlServiceImpl implements UrlService {
-    @Value("${app.base-url}")
-    private String baseUrl;
+    @Value("${spring.shortener.short-url}")
+    private String shortUrl;
     private final UrlRepository urlRepository;
 
     public UrlServiceImpl(UrlRepository urlRepository) {
@@ -26,11 +32,13 @@ public class UrlServiceImpl implements UrlService {
 
         // Optional<Url> existing = urlRepository.findByOriginalUrl(request.url());
         // if (existing.isPresent()) {
-        //     return new UrlResponseDTO(
-        //             request.url(),
-        //             baseUrl + "/" + existing.get().getShortCode());
+        // return new UrlResponseDTO(
+        // request.url(),
+        // baseUrl + "/" + existing.get().getShortCode());
         // }
-
+        if (!UrlValidator.isValidUrl(request.url())) {
+            throw new NotValidUrlException("Invalid URL format");
+        }
         String shortCode = generateUniqueCode();
 
         Url url = new Url();
@@ -39,13 +47,13 @@ public class UrlServiceImpl implements UrlService {
         urlRepository.save(url);
         return new UrlResponseDTO(
                 request.url(),
-                baseUrl + "/" + shortCode);
+                shortUrl + "/" + shortCode);
     }
 
     @Override
     public String getOriginalUrl(String shortCode) {
-        Url url = urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("Short URL not found"));
+        Optional<Url> urlOptional = urlRepository.findByShortCode(shortCode);
+        Url url = urlOptional.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
         url.setClickCount(url.getClickCount() + 1);
         urlRepository.save(url);
@@ -54,9 +62,16 @@ public class UrlServiceImpl implements UrlService {
 
     @Override
     public UrlInfoDTO getUrlInfo(String shortCode) {
-        Url url = urlRepository.findByShortCode(shortCode)
-                .orElseThrow(() -> new RuntimeException("Short URL not found"));
+        Optional<Url> urlOptional = urlRepository.findByShortCode(shortCode);
+        Url url = urlOptional.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
         return new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount());
+    }
+
+    @Override
+    public List<UrlInfoDTO> getAllUrls() {
+        return urlRepository.findAll().stream()
+                .map(url -> new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount()))
+                .collect(Collectors.toList());
     }
 
     private String generateUniqueCode() {

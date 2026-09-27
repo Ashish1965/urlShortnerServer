@@ -1,5 +1,7 @@
 package com.example.urlshortner.dto;
 
-public record UrlRequestDTO(String url) {
-    
+import jakarta.validation.constraints.NotBlank;
+public record UrlRequestDTO(
+        @NotBlank(message = "URL cannot be empty") String url) {
+
 }

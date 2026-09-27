@@ -11,6 +11,10 @@ import com.example.urlshortner.dto.UrlInfoDTO;
 import com.example.urlshortner.dto.UrlRequestDTO;
 import com.example.urlshortner.dto.UrlResponseDTO;
 import com.example.urlshortner.service.UrlService;
+
+import jakarta.validation.Valid;
+
+import java.util.List;
 import org.springframework.web.bind.annotation.PathVariable;
 
 
@@ -25,7 +29,7 @@ public class UrlController {
     }
 
     @PostMapping("/shorten")
-    public ResponseEntity<UrlResponseDTO> createShortUrl(@RequestBody UrlRequestDTO request) {
+    public ResponseEntity<UrlResponseDTO> createShortUrl(@Valid @RequestBody UrlRequestDTO request) {
 
         UrlResponseDTO response = urlService.createShortUrl(request);
 
@@ -36,5 +40,10 @@ public class UrlController {
     public ResponseEntity<UrlInfoDTO> getUrlInfo(@PathVariable String shortCode) {
         UrlInfoDTO response = urlService.getUrlInfo(shortCode);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping ("/all")
+    public ResponseEntity<List<UrlInfoDTO>> getAllUrls() {
+        return ResponseEntity.ok(urlService.getAllUrls());
     }
 }
