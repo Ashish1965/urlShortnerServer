@@ -60,6 +60,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(UrlExpiredException.class)
+    public ResponseEntity<ErrorResponseDto> handleExpired(
+            UrlExpiredException ex,
+            HttpServletRequest request) {
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                LocalDateTime.now(),
+                HttpStatus.GONE.value(), // 🔥 410
+                "Gone",
+                ex.getMessage(),
+                request.getRequestURI());
+
+        return new ResponseEntity<>(error, HttpStatus.GONE);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGlobal(
             Exception ex,

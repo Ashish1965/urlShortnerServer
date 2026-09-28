@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
+import java.time.LocalDateTime;
 
 @Entity
 @Data 
@@ -20,4 +21,6 @@ public class Url {
     @Column (unique = true,nullable = false)
     private String shortCode;
     private Long clickCount = 0L;
+
+    private LocalDateTime expiryDate;
 }
