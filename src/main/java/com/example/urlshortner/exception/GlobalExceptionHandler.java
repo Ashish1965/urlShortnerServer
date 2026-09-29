@@ -8,14 +8,19 @@ import com.example.urlshortner.dto.ErrorResponseDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleNotFound(
             ResourceNotFoundException ex,
             HttpServletRequest request) {
+        log.error("Resource not found: {}", ex.getMessage());
 
         ErrorResponseDto error = new ErrorResponseDto(
                 LocalDateTime.now(),
@@ -31,6 +36,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleInvalidUrl(
             NotValidUrlException ex,
             HttpServletRequest request) {
+        log.error("Invalid URL: {}", ex.getMessage());
 
         ErrorResponseDto error = new ErrorResponseDto(
                 LocalDateTime.now(),
@@ -48,6 +54,7 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
 
+        log.error("Validation error: {}", ex.getBindingResult().getFieldError().getDefaultMessage());
         ErrorResponseDto error = new ErrorResponseDto(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -64,7 +71,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleExpired(
             UrlExpiredException ex,
             HttpServletRequest request) {
-
+        log.error("URL expired: {}", ex.getMessage());
         ErrorResponseDto error = new ErrorResponseDto(
                 LocalDateTime.now(),
                 HttpStatus.GONE.value(), // 🔥 410
@@ -79,6 +86,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleGlobal(
             Exception ex,
             HttpServletRequest request) {
+        log.error("Internal server error: {}", ex.getMessage(), ex);
         ErrorResponseDto error = new ErrorResponseDto(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
