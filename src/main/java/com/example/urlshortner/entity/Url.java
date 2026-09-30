@@ -23,4 +23,7 @@ public class Url {
     private Long clickCount = 0L;
 
     private LocalDateTime expiryDate;
+    private boolean isActive = true; 
+
+    private LocalDateTime deletedAt;
 }

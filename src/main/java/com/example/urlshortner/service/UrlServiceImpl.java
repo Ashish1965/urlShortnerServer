@@ -52,10 +52,10 @@ public class UrlServiceImpl implements UrlService {
             throw new NotValidUrlException("Invalid URL format");
         }
 
-        List<Url> existingUrls = urlRepository.findAllByOriginalUrl(request.url());
+        List<Url> existingUrls = urlRepository.findAllByOriginalUrlAndIsActiveTrue(request.url());
         log.info("Found {} existing URLs for: {}", existingUrls.size(), request.url());
         return existingUrls.stream()
-                .filter(url -> url.getExpiryDate() != null &&
+                .filter(url -> url.isActive() && url.getExpiryDate() != null &&
                         url.getExpiryDate().isAfter(LocalDateTime.now()))
                 .findFirst()
                 .map(url -> new UrlResponseDTO(
@@ -81,14 +81,14 @@ public class UrlServiceImpl implements UrlService {
     @Override
     public String getOriginalUrl(String shortCode) {
         log.info("Retrieving original URL for short code: {}", shortCode);
-        Optional<Url> urlOptional = urlRepository.findByShortCode(shortCode);
+        Optional<Url> urlOptional = urlRepository.findByShortCodeAndIsActiveTrue(shortCode);
         log.info("Found URL: {}", urlOptional.map(Url::getOriginalUrl).orElse("Not Found"));
         Url url = urlOptional.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
         if (url.getExpiryDate() != null &&
                 url.getExpiryDate().isBefore(LocalDateTime.now())) {
 
-        log.warn("URL with short code {} has expired", shortCode);
+            log.warn("URL with short code {} has expired", shortCode);
             throw new UrlExpiredException("This URL has expired");
         }
 
@@ -99,7 +99,7 @@ public class UrlServiceImpl implements UrlService {
 
     @Override
     public UrlInfoDTO getUrlInfo(String shortCode) {
-        Optional<Url> urlOptional = urlRepository.findByShortCode(shortCode);
+        Optional<Url> urlOptional = urlRepository.findByShortCodeAndIsActiveTrue(shortCode);
         Url url = urlOptional.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
         if (url.getExpiryDate() != null &&
@@ -107,10 +107,9 @@ public class UrlServiceImpl implements UrlService {
             log.warn("URL with short code {} has expired", shortCode);
             throw new UrlExpiredException("This URL has expired");
         }
-        boolean isExpired = url.getExpiryDate() != null &&
-                url.getExpiryDate().isBefore(LocalDateTime.now());
+
         log.info("Returning info for URL with short code: {}", shortCode);
-        return new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount(), isExpired);
+        return new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount(), url.isActive());
     }
 
     @Override
@@ -119,14 +118,11 @@ public class UrlServiceImpl implements UrlService {
         return urlRepository.findAll().stream()
                 .map(url -> {
 
-                    boolean isExpired = url.getExpiryDate() != null &&
-                            url.getExpiryDate().isBefore(LocalDateTime.now());
-
                     return new UrlInfoDTO(
                             url.getOriginalUrl(),
                             url.getShortCode(),
                             url.getClickCount(),
-                            isExpired);
+                            url.isActive());
                 })
                 .toList();
     }
@@ -135,7 +131,7 @@ public class UrlServiceImpl implements UrlService {
         String code;
         do {
             code = ShortCodeGenerator.generateCode();
-        } while (urlRepository.findByShortCode(code).isPresent());
+        } while (urlRepository.findByShortCodeAndIsActiveTrue(code).isPresent());
 
         return code;
     }
