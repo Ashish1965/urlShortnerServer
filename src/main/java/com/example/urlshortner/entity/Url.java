@@ -9,7 +9,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Data 
+@Data
 public class Url {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,4 +26,6 @@ public class Url {
     private boolean isActive = true; 
 
     private LocalDateTime deletedAt;
+
+    private LocalDateTime lastAccessedAt;
 }

@@ -82,6 +82,7 @@ public class UrlServiceImpl implements UrlService {
     public String getOriginalUrl(String shortCode) {
         log.info("Retrieving original URL for short code: {}", shortCode);
         Optional<Url> urlOptional = urlRepository.findByShortCodeAndIsActiveTrue(shortCode);
+
         log.info("Found URL: {}", urlOptional.map(Url::getOriginalUrl).orElse("Not Found"));
         Url url = urlOptional.orElseThrow(() -> new ResourceNotFoundException("Short URL not found"));
 
@@ -93,6 +94,7 @@ public class UrlServiceImpl implements UrlService {
         }
 
         url.setClickCount(url.getClickCount() + 1);
+        url.setLastAccessedAt(LocalDateTime.now());
         urlRepository.save(url);
         return url.getOriginalUrl();
     }
@@ -109,7 +111,8 @@ public class UrlServiceImpl implements UrlService {
         }
 
         log.info("Returning info for URL with short code: {}", shortCode);
-        return new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount(), url.isActive());
+        return new UrlInfoDTO(url.getOriginalUrl(), url.getShortCode(), url.getClickCount(), url.isActive(),
+                url.getLastAccessedAt());
     }
 
     @Override
@@ -122,8 +125,23 @@ public class UrlServiceImpl implements UrlService {
                             url.getOriginalUrl(),
                             url.getShortCode(),
                             url.getClickCount(),
-                            url.isActive());
+                            url.isActive(),
+                            url.getLastAccessedAt());
                 })
+                .toList();
+    }
+
+    @Override
+    public List<UrlInfoDTO> getTopUrls() {
+
+        return urlRepository.findTop5ByOrderByClickCountDesc()
+                .stream()
+                .map(url -> new UrlInfoDTO(
+                        url.getOriginalUrl(),
+                        url.getShortCode(),
+                        url.getClickCount(),
+                        url.isActive(),
+                        url.getLastAccessedAt()))
                 .toList();
     }
 

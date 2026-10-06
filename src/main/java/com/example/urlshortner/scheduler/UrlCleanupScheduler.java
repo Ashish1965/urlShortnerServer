@@ -26,7 +26,7 @@ private static final Logger hardLog = LoggerFactory.getLogger("HARD_DELETE_LOG")
         this.urlRepository = urlRepository;
     }
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 600000)
     @Transactional
     public void markExpiredUrls() {
 
@@ -42,7 +42,7 @@ private static final Logger hardLog = LoggerFactory.getLogger("HARD_DELETE_LOG")
         softLog .info("Marked {} URLs as expired at {}", count, now);
     }
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 600000)
     @Transactional
     public void deleteOldSoftDeletedUrls() {
 

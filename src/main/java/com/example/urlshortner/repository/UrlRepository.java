@@ -31,4 +31,7 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
     long countByIsActiveFalseAndDeletedAtBefore(LocalDateTime time);
 
     void deleteByIsActiveFalseAndDeletedAtBefore(LocalDateTime time);
+
+    List<Url> findTop5ByOrderByClickCountDesc();
+    boolean existsByShortCode(String shortCode);
 }

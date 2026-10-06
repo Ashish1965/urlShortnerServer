@@ -1,19 +1,22 @@
 package com.example.urlshortner.util;
 
-import java.util.Random;
+import org.springframework.beans.factory.annotation.Value;
+
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
 
 public class ShortCodeGenerator {
-    private static final String CHAR_SET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final int LENGTH = 6;
+
+    private static final char[] ALPHABET =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+
+    @Value ("${spring.shortener.short-code-length}")
+    private static int SIZE;
 
     public static String generateCode() {
-        StringBuilder sb = new StringBuilder();
-        Random random = new Random();
-
-        for (int i = 0; i < LENGTH; i++) {
-            sb.append(CHAR_SET.charAt(random.nextInt(CHAR_SET.length())));
-        }
-
-        return sb.toString();
+        return NanoIdUtils.randomNanoId(
+                NanoIdUtils.DEFAULT_NUMBER_GENERATOR,
+                ALPHABET,
+                SIZE
+        );
     }
 }

@@ -9,4 +9,5 @@ public interface UrlService {
     String getOriginalUrl(String shortCode);
     UrlInfoDTO getUrlInfo(String shortCode);
     List<UrlInfoDTO> getAllUrls();
+    List<UrlInfoDTO> getTopUrls();
 }
