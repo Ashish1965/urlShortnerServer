@@ -8,10 +8,9 @@ import org.springframework.stereotype.Service;
 import com.example.urlshortner.util.ShortCodeGenerator;
 import com.example.urlshortner.repository.UrlRepository;
 import com.example.urlshortner.entity.Url;
-
 import com.example.urlshortner.dto.UrlInfoDTO;
-
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import com.example.urlshortner.exception.ResourceNotFoundException;
 import com.example.urlshortner.exception.UrlExpiredException;
@@ -21,6 +20,7 @@ import java.util.Optional;
 import com.example.urlshortner.util.ExpiryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.transaction.Transactional;
 
 @Service
 public class UrlServiceImpl implements UrlService {
@@ -29,12 +29,18 @@ public class UrlServiceImpl implements UrlService {
     private String shortUrl;
     private final UrlRepository urlRepository;
     private final ExpiryUtil expiryUtil;
+    private final ShortCodeGenerator shortCodeGenerator;
+    private final UrlCacheService urlCacheService;
 
-    public UrlServiceImpl(UrlRepository urlRepository, ExpiryUtil expiryUtil) {
+    public UrlServiceImpl(UrlRepository urlRepository, ExpiryUtil expiryUtil, ShortCodeGenerator shortCodeGenerator,
+            UrlCacheService urlCacheService) {
         this.urlRepository = urlRepository;
         this.expiryUtil = expiryUtil;
+        this.shortCodeGenerator = shortCodeGenerator;
+        this.urlCacheService = urlCacheService;
     }
 
+    @Transactional
     @Override
     public UrlResponseDTO createShortUrl(UrlRequestDTO request) {
         // Implement the logic to create a short URL here
@@ -78,9 +84,21 @@ public class UrlServiceImpl implements UrlService {
                 });
     }
 
+    @Transactional
     @Override
     public String getOriginalUrl(String shortCode) {
         log.info("Retrieving original URL for short code: {}", shortCode);
+
+        String cachedUrl = urlCacheService.get(shortCode);
+
+        if (cachedUrl != null) {
+            log.info("Cache hit for short code: {}. Returning cached URL: {}", shortCode, cachedUrl);
+            // urlRepository.incrementClickCount(
+            //         shortCode,
+            //         LocalDateTime.now());
+            return cachedUrl;
+        }
+        log.info("Cache miss for short code: {}. Fetching from database.", shortCode);
         Optional<Url> urlOptional = urlRepository.findByShortCodeAndIsActiveTrue(shortCode);
 
         log.info("Found URL: {}", urlOptional.map(Url::getOriginalUrl).orElse("Not Found"));
@@ -89,13 +107,31 @@ public class UrlServiceImpl implements UrlService {
         if (url.getExpiryDate() != null &&
                 url.getExpiryDate().isBefore(LocalDateTime.now())) {
 
-            log.warn("URL with short code {} has expired", shortCode);
+            log.info("URL with short code {} has expired", shortCode);
             throw new UrlExpiredException("This URL has expired");
         }
 
         url.setClickCount(url.getClickCount() + 1);
         url.setLastAccessedAt(LocalDateTime.now());
         urlRepository.save(url);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiryDate = url.getExpiryDate();
+
+        if (expiryDate != null && !expiryDate.isAfter(now)) {
+            throw new UrlExpiredException("URL expired");
+        }
+
+        if (expiryDate != null) {
+            long ttlSeconds = ChronoUnit.SECONDS.between(now, expiryDate);
+
+            urlCacheService.put(
+                    shortCode,
+                    url.getOriginalUrl(),
+                    ttlSeconds);
+            log.info("Cached original URL: {} for short code: {} with TTL: {} seconds", url.getOriginalUrl(), shortCode, ttlSeconds);
+        }
+
         return url.getOriginalUrl();
     }
 
@@ -106,7 +142,7 @@ public class UrlServiceImpl implements UrlService {
 
         if (url.getExpiryDate() != null &&
                 url.getExpiryDate().isBefore(LocalDateTime.now())) {
-            log.warn("URL with short code {} has expired", shortCode);
+            log.info("URL with short code {} has expired", shortCode);
             throw new UrlExpiredException("This URL has expired");
         }
 
@@ -145,10 +181,10 @@ public class UrlServiceImpl implements UrlService {
                 .toList();
     }
 
-    private String generateUniqueCode() {
+    public String generateUniqueCode() {
         String code;
         do {
-            code = ShortCodeGenerator.generateCode();
+            code = shortCodeGenerator.generateCode();
         } while (urlRepository.findByShortCodeAndIsActiveTrue(code).isPresent());
 
         return code;

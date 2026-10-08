@@ -28,10 +28,22 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
             """)
     int softDeleteExpired(@Param("now") LocalDateTime now);
 
+    @Modifying
+    @Query("""
+                UPDATE Url u
+                SET u.clickCount = u.clickCount + 1,
+                    u.lastAccessedAt = :now
+                WHERE u.shortCode = :shortCode
+            """)
+    int incrementClickCount(
+            @Param("shortCode") String shortCode,
+            @Param("now") LocalDateTime now);
+
     long countByIsActiveFalseAndDeletedAtBefore(LocalDateTime time);
 
     void deleteByIsActiveFalseAndDeletedAtBefore(LocalDateTime time);
 
     List<Url> findTop5ByOrderByClickCountDesc();
+
     boolean existsByShortCode(String shortCode);
 }

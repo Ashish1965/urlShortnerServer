@@ -13,17 +13,23 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.example.urlshortner.util.ShortCodeGenerator;
+import com.example.urlshortner.util.UrlValidator;
 
-@ExtendWith(MockitoExtension.class)
 @ExtendWith(MockitoExtension.class)
 class UrlServiceTest {
 
     @Mock
     private UrlRepository urlRepository;
 
+    @Mock
+    private ShortCodeGenerator shortCodeGenerator;
+
+    @Mock
+    private UrlCacheService urlCacheService;
+
     @InjectMocks
     private UrlServiceImpl urlService;
-
 
     @Test
     void shouldReturnOriginalUrl() {
@@ -39,7 +45,6 @@ class UrlServiceTest {
         assertEquals("https://google.com", result);
     }
 
-
     @Test
     void shouldThrowExceptionWhenUrlNotFound() {
 
@@ -50,7 +55,6 @@ class UrlServiceTest {
             urlService.getOriginalUrl("abc");
         });
     }
-
 
     @Test
     void shouldThrowExceptionWhenUrlIsExpired() {
@@ -68,7 +72,6 @@ class UrlServiceTest {
         });
     }
 
-
     @Test
     void shouldReturnUrlNotExpired() {
 
@@ -84,7 +87,6 @@ class UrlServiceTest {
 
         assertEquals("https://google.com", result);
     }
-
 
     @Test
     void shouldIncrementClickCountAndUpdateLastAccessedAt() {
@@ -106,4 +108,52 @@ class UrlServiceTest {
 
         verify(urlRepository).save(url);
     }
+
+    @Test
+    void shouldReturnUniqueCode() {
+
+        when(shortCodeGenerator.generateCode())
+                .thenReturn("abc1234");
+
+        when(urlRepository.findByShortCodeAndIsActiveTrue("abc1234"))
+                .thenReturn(Optional.empty());
+
+        String result = urlService.generateUniqueCode();
+
+        assertEquals("abc1234", result);
+    }
+
+    @Test
+    void shouldGenerateAnotherCodeWhenCodeAlreadyExists() {
+
+        when(shortCodeGenerator.generateCode())
+                .thenReturn("abc1234")
+                .thenReturn("xyz5678")
+                .thenReturn("ash123");
+
+        when(urlRepository.findByShortCodeAndIsActiveTrue("abc1234"))
+                .thenReturn(Optional.of(new Url()));
+
+        when(urlRepository.findByShortCodeAndIsActiveTrue("xyz5678"))
+                .thenReturn(Optional.of(new Url()));
+        when(urlRepository.findByShortCodeAndIsActiveTrue("xyz5678"))
+                .thenReturn(Optional.of(new Url()));
+        when(urlRepository.findByShortCodeAndIsActiveTrue("ash123"))
+                .thenReturn(Optional.empty());
+
+        String result = urlService.generateUniqueCode();
+
+        assertEquals("ash123", result);
+    }
+
+    @Test
+    void shouldValidUrl() {
+        assertTrue(UrlValidator.isValidUrl("https://www.example.com"));
+    }
+
+    @Test
+    void shouldInvalidUrl() {
+        assertFalse(UrlValidator.isValidUrl("invalid-url"));
+    }
+
 }
