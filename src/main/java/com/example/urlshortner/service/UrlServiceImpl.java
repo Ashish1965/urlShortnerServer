@@ -90,12 +90,14 @@ public class UrlServiceImpl implements UrlService {
         log.info("Retrieving original URL for short code: {}", shortCode);
 
         String cachedUrl = urlCacheService.get(shortCode);
+        // Long claimed = urlCacheService.claimPendingClicks(shortCode);
+
+        // log.info("Claimed clicks: " + claimed);
 
         if (cachedUrl != null) {
             log.info("Cache hit for short code: {}. Returning cached URL: {}", shortCode, cachedUrl);
-            // urlRepository.incrementClickCount(
-            //         shortCode,
-            //         LocalDateTime.now());
+            urlCacheService.incrementClickCount(shortCode);
+
             return cachedUrl;
         }
         log.info("Cache miss for short code: {}. Fetching from database.", shortCode);
@@ -129,7 +131,8 @@ public class UrlServiceImpl implements UrlService {
                     shortCode,
                     url.getOriginalUrl(),
                     ttlSeconds);
-            log.info("Cached original URL: {} for short code: {} with TTL: {} seconds", url.getOriginalUrl(), shortCode, ttlSeconds);
+            log.info("Cached original URL: {} for short code: {} with TTL: {} seconds", url.getOriginalUrl(), shortCode,
+                    ttlSeconds);
         }
 
         return url.getOriginalUrl();

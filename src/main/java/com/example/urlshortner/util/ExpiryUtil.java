@@ -6,13 +6,13 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ExpiryUtil {
-    @Value("${spring.shortener.expiry-minutes}")
-    private int DEFAULT_EXPIRY_MINUTES;
+    @Value("${spring.shortener.expiry-days}")
+    private int DEFAULT_EXPIRY_DAYS;
 
     // private constructor to prevent object creation
     private ExpiryUtil() {}
 
     public LocalDateTime generateExpiryDate() {
-        return LocalDateTime.now().plusMinutes(DEFAULT_EXPIRY_MINUTES);
+        return LocalDateTime.now().plusDays(DEFAULT_EXPIRY_DAYS);
     }
 }

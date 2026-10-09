@@ -31,13 +31,12 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
     @Modifying
     @Query("""
                 UPDATE Url u
-                SET u.clickCount = u.clickCount + 1,
-                    u.lastAccessedAt = :now
+                SET u.clickCount = COALESCE(u.clickCount, 0) + :count
                 WHERE u.shortCode = :shortCode
             """)
-    int incrementClickCount(
+    int addClickCount(
             @Param("shortCode") String shortCode,
-            @Param("now") LocalDateTime now);
+            @Param("count") long count);
 
     long countByIsActiveFalseAndDeletedAtBefore(LocalDateTime time);
 
